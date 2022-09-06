@@ -17,24 +17,20 @@ Describe how a change in the rate of depreciation from the value zero assumed in
 # Opgave 2
 
 
-Find Taylor approximation af:
+Find the 3. order Taylor approximation of:
 
-- (a.) $f(x) = 4x^3 + 2x^2 -3x +2$ når $x=0$ 
+- (a.) $f(x) = 4x^3 + 2x^2 -3x +2$ when $x=0$ 
 
-- (b.) $f(x) = e^{3x}$ når $x=0$
+- (b.) $f(x) = e^{3x}$ when $x=0$
 
-- (c.) $f(x) = \sqrt{1+x}$ når $x=0$
+- (c.) $f(x) = \sqrt{1+x}$ when $x=0$
 
-- (d.) $f(x) = \sqrt[3]{x}$ når $x=1$
-
-- (e.) $F(K) = AK^\alpha$ når $K=1$
-
-- (f.) $f(x) = 5(ln(1-x)- \sqrt{1-x})$ når $x=0$
+- (d.) $f(x) = \sqrt[3]{x}$ when $x=1$
 
 
 # Opgave 3
 
-Givet funktionen $f(x)=x^6 - x^3$ hvad er koefficienten for ledet $(x+2)^4$ i Taylor approximation af f(x) omkring $x=-2$
+Given the funktion $f(x)=x^6 - x^3$ what is the coefficient for the term $(x+2)^4$ of the Taylor approximation around $x=-2$
 
 
 
