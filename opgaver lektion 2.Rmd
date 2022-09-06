@@ -1,0 +1,53 @@
+---
+title: "Opgaver lektion 2"
+author: "Simon"
+date: "4/8/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Opgaver til fase diagrammer?
+
+# Opgave 1
+
+Describe how a change in the rate of depreciation from the value zero assumed in the text to some positive level affects the $\dot{c} =0$, and $\dot{k} = 0$ curves in figure 2.5 and thus how they affect the balanced growth path values of $c$ and $k$.
+
+
+# Opgave 2
+
+
+Find Taylor approximation af:
+
+- (a.) $f(x) = 4x^3 + 2x^2 -3x +2$ når $x=0$ 
+
+- (b.) $f(x) = e^{3x}$ når $x=0$
+
+- (c.) $f(x) = \sqrt{1+x}$ når $x=0$
+
+- (d.) $f(x) = \sqrt[3]{x}$ når $x=1$
+
+- (e.) $F(K) = AK^\alpha$ når $K=1$
+
+- (f.) $f(x) = 5(ln(1-x)- \sqrt{1-x})$ når $x=0$
+
+
+# Opgave 3
+
+Givet funktionen $f(x)=x^6 - x^3$ hvad er koefficienten for ledet $(x+2)^4$ i Taylor approximation af f(x) omkring $x=-2$
+
+
+
+# Opgave 4
+
+Find en 1. order Taylor approximation omkring $k=k^*$ når du ved at udviklingen i kapital over tid følger følgende ligning: 
+Følg og forstå steps i bogen side 26-27.
+
+
+$$\dot{k} = s*f(k) - (n+g+\delta)k$$
+
+
+
+
+
+
