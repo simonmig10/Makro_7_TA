@@ -1,0 +1,400 @@
+---
+title: "OLG_bimet_package"
+author: "Hamid"
+date: '2022-09-09'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Solving OLG in R
+
+```{r}
+rm(list = ls())
+
+library(mFilter)
+library(bimets)
+library(knitr)
+library(rlang)
+library(tidyverse)
+```
+
+Define parameter values as time series vectors:
+```{r}
+
+alpha = TIMESERIES(rep(1/3, 100), START  = c(1995,1), FREQ = 1)
+rho=TIMESERIES(rep(0.4, 100), START  = c(1995,1), FREQ = 1)
+n = TIMESERIES(rep(0.02, 100), START  = c(1995,1), FREQ = 1)
+g= TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+K=TIMESERIES(rep(20, 100), START  = c(1995,1), FREQ = 1)
+L=TIMESERIES(rep(200, 100), START  = c(1995,1), FREQ = 1)
+A=TIMESERIES(rep(10, 100), START  = c(1995,1), FREQ = 1)
+s=TIMESERIES(rep(0.5, 100), START  = c(1995,1), FREQ = 1)
+theta=TIMESERIES(rep(0.8, 100), START  = c(1995,1), FREQ = 1)
+Y=(K^alpha)*((A*L)^(1-alpha))
+k = K/(A*L)
+r = alpha*k^(alpha-1)
+w = (1-alpha)*k^alpha*A
+c2 = TSLAG(s,1)*(1+r)
+c1 = A*w*((1 + rho)^(1/theta)) / ((1 + rho)^(1/theta)+ (1 + r)^((1-theta)/theta))
+y = Y/(A*L)
+
+### Shock theta
+
+theta_shock= TIMESERIES(rep(0.4, 100), START  = c(1995,1), FREQ = 1)
+shock_theta_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+
+### Shock rho
+
+### 0.1
+rho_shock= TIMESERIES(rep(0.1, 100), START  = c(1995,1), FREQ = 1)
+shock_rho_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+### 0.9
+rho_shock1= TIMESERIES(rep(0.9, 100), START  = c(1995,1), FREQ = 1)
+shock_rho1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+
+S_modelData1=lapply(ls(),function(x)get(x))
+names= ls()
+names(S_modelData1) = names[names != "S_modelData1"]
+
+
+
+```
+
+
+# The model
+
+
+
+```{r echo=FALSE}
+S_model.txt="MODEL
+
+IDENTITY> Y
+EQ> Y = (K^alpha)*((A*L)^(1-alpha))
+
+IDENTITY> K
+EQ> K = (TSLAG(L,1))*(TSLAG(s,1))
+
+IDENTITY> L
+EQ> L = (TSLAG(L,1))*(1+n)
+
+IDENTITY> A
+EQ> A = (TSLAG(A,1))*(1+g)
+
+IDENTITY> k
+EQ> k = K/(A*L)
+
+IDENTITY> y
+EQ> y = Y/(A*L)
+
+IDENTITY> w
+EQ> w = (1-alpha)*k^alpha*A
+
+IDENTITY> r
+EQ> r = alpha*k^(alpha-1)
+
+IDENTITY> c1
+EQ> c1 = A*w*((1 + rho)^(1/theta)) / ((1 + rho)^(1/theta)+ (1 + r)^((1-theta)/theta))
+
+IDENTITY> s
+EQ> s = A*w-c1
+
+IDENTITY> c2
+EQ> c2 = (TSLAG(s,1))*(1+r)
+
+
+COMMENT> Shock to theta
+IDENTITY> theta
+EQ> theta = theta*1
+IF> shock_theta_model <= 0
+IDENTITY> theta
+EQ> theta = theta_shock
+IF> shock_theta_model > 0
+
+COMMENT> Lavet for at kunne støde til theta 
+IDENTITY> shock_theta_model
+EQ> shock_theta_model = shock_theta_model*1
+
+COMMENT> Shock to rho
+IDENTITY> rho
+EQ> rho = rho*1
+IF> shock_rho_model <= 0
+IDENTITY> rho
+EQ> rho = rho_shock
+IF> shock_rho_model > 0
+IDENTITY> rho
+EQ> rho = rho_shock1
+IF> shock_rho1_model > 0
+
+COMMENT> Lavet for at kunne støde til rho 
+IDENTITY> shock_rho_model
+EQ> shock_rho_model = shock_rho_model*1
+
+COMMENT> Lavet for at kunne støde til rho 
+IDENTITY> shock_rho1_model
+EQ> shock_rho1_model = shock_rho1_model*1
+
+END"
+```
+
+
+```{r}
+S_model=LOAD_MODEL(modelText = S_model.txt)
+```
+
+
+
+```{r}
+S_model=LOAD_MODEL_DATA(S_model,S_modelData1)
+```
+
+
+```{r}
+# In-sample prediction (no add factors)
+S_model <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                   )
+```
+
+
+```{r}
+Y_00 = S_model$simulation$Y
+y_00 = S_model$simulation$y
+k_00 = S_model$simulation$k
+s_00 = S_model$simulation$s
+r_00 = S_model$simulation$r
+c1_00 = S_model$simulation$c1
+c2_00 = S_model$simulation$c2
+w_00 = S_model$simulation$w
+```
+
+
+```{r}
+plot(s_00, col= "green"); lines(s, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(r_00, col= "green"); lines(r, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_00, col= "green"); lines(c1, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(c2_00, col= "green"); lines(c2, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(w_00, col= "green"); lines(w, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+```
+
+
+# Shock to theta
+
+```{r}
+shock_theta_model_shock=shock_theta_model %>% window(start= c(2050,1))
+```
+
+
+
+
+```{r}
+# Define add-factor list (defining shock)
+constantAdjList <- list(
+  
+ shock_theta_model = TIMESERIES(shock_theta_model_shock+1 ,START=c(2050,1),  FREQ=1)
+ 
+)
+
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_1 <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    ,ConstantAdjustment=constantAdjList
+                    )
+```
+
+
+```{r}
+y_01 = Shock_1$simulation$y
+k_01 = Shock_1$simulation$k
+c1_01 = Shock_1$simulation$c1
+c2_01 = Shock_1$simulation$c2
+```
+
+
+```{r}
+plot(y_01, col= "green", ylim=c(0,2)); lines(y_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_01, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_01, col= "green"); lines(c2_01, col = "blue"); 
+legend("top",legend=c("c1", "c2"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_01, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
+
+
+# Shock to rho
+
+## rho = 0.1
+
+```{r}
+shock_rho_model_shock=shock_rho_model %>% window(start= c(2050,1))
+```
+
+
+
+
+```{r}
+# Define add-factor list (defining shock)
+constantAdjList1 <- list(
+  
+ shock_rho_model = TIMESERIES(shock_rho_model_shock+1 ,START=c(2050,1),  FREQ=1)
+ 
+)
+
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_2 <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    ,ConstantAdjustment=constantAdjList1
+                    )
+```
+
+
+```{r}
+y_02 = Shock_2$simulation$y
+k_02 = Shock_2$simulation$k
+c1_02 = Shock_2$simulation$c1
+c2_02 = Shock_2$simulation$c2
+s_02 = Shock_2$simulation$s
+```
+
+
+```{r}
+plot(y_02, col= "green", ylim=c(0,2)); lines(y_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_02, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_02, col= "green"); lines(c1_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(s_02, col= "green"); lines(s_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
+
+
+## rho = 0.9
+
+```{r}
+shock_rho1_model_shock=shock_rho1_model %>% window(start= c(2050,1))
+```
+
+
+
+
+```{r}
+# Define add-factor list (defining shock)
+constantAdjList2 <- list(
+  
+ shock_rho1_model = TIMESERIES(shock_rho1_model_shock+1 ,START=c(2050,1),  FREQ=1)
+ 
+)
+
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_3 <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    ,ConstantAdjustment=constantAdjList2
+                    )
+```
+
+
+```{r}
+y_03 = Shock_3$simulation$y
+k_03 = Shock_3$simulation$k
+c1_03 = Shock_3$simulation$c1
+c2_03 = Shock_3$simulation$c2
+s_03 = Shock_3$simulation$s
+```
+
+
+```{r}
+plot(s_03, col= "green"); lines(s_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_03, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_03, col= "green"); lines(c1_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(c2_03, col= "green"); lines(c2_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
+
+
+
+# Shock to r
+
+## New baseline
+
+
