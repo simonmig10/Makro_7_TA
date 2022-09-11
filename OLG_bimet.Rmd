@@ -58,6 +58,20 @@ rho_shock1= TIMESERIES(rep(0.9, 100), START  = c(1995,1), FREQ = 1)
 shock_rho1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
 
 
+### Shock to r
+
+
+### Baseline
+r_shock= TIMESERIES(rep(0.01, 100), START  = c(1995,1), FREQ = 1)
+shock_r_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+
+### 0.08
+
+r_shock1= TIMESERIES(rep(0.08, 100), START  = c(1995,1), FREQ = 1)
+shock_r1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+
 S_modelData1=lapply(ls(),function(x)get(x))
 names= ls()
 names(S_modelData1) = names[names != "S_modelData1"]
@@ -97,6 +111,21 @@ EQ> w = (1-alpha)*k^alpha*A
 
 IDENTITY> r
 EQ> r = alpha*k^(alpha-1)
+IF> shock_r_model <= 0
+IDENTITY> r
+EQ> r = r_shock
+IF> shock_r_model > 0
+IDENTITY> r
+EQ> r = r_shock1
+IF> shock_r1_model > 0
+
+COMMENT> Lavet for at kunne støde til r
+IDENTITY> shock_r_model
+EQ> shock_r_model = shock_r_model*1
+
+COMMENT> Lavet for at kunne støde til r
+IDENTITY> shock_r1_model
+EQ> shock_r1_model = shock_r1_model*1
 
 IDENTITY> c1
 EQ> c1 = A*w*((1 + rho)^(1/theta)) / ((1 + rho)^(1/theta)+ (1 + r)^((1-theta)/theta))
@@ -396,5 +425,128 @@ grid()
 # Shock to r
 
 ## New baseline
+
+```{r}
+shock_r_model_shock=shock_r_model %>% window(start= c(2050,1))
+```
+
+
+
+
+```{r}
+# Define add-factor list (defining shock)
+constantAdjList3 <- list(
+  
+ shock_r_model = TIMESERIES(shock_r_model_shock+1 ,START=c(2050,1),  FREQ=1)
+ 
+)
+
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_4 <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    ,ConstantAdjustment=constantAdjList3
+                    )
+```
+
+
+```{r}
+y_04 = Shock_4$simulation$y
+k_04 = Shock_4$simulation$k
+c1_04 = Shock_4$simulation$c1
+c2_04 = Shock_4$simulation$c2
+s_04 = Shock_4$simulation$s
+```
+
+
+```{r}
+plot(s_04, col= "green"); lines(s_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_04, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_04, col= "green"); lines(c1_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(c2_04, col= "green"); lines(c2_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
+
+
+## Shock r
+
+```{r}
+shock_r1_model_shock=shock_r1_model %>% window(start= c(2050,1))
+```
+
+
+
+
+```{r}
+# Define add-factor list (defining shock)
+constantAdjList4 <- list(
+  
+ shock_r1_model = TIMESERIES(shock_r1_model_shock+1 ,START=c(2050,1),  FREQ=1)
+ 
+)
+
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_5 <- SIMULATE(S_model
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    ,ConstantAdjustment=constantAdjList4
+                    )
+```
+
+
+```{r}
+y_05 = Shock_5$simulation$y
+k_05 = Shock_5$simulation$k
+c1_05 = Shock_5$simulation$c1
+c2_05 = Shock_5$simulation$c2
+s_05 = Shock_5$simulation$s
+```
+
+
+```{r}
+plot(s_05, col= "green"); lines(s_04, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_04, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_04, col= "green"); lines(c1_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(c2_04, col= "green"); lines(c2_00, col = "blue"); 
+legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
 
 
