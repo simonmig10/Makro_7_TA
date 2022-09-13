@@ -43,9 +43,17 @@ y = Y/(A*L)
 
 ### Shock theta
 
+## 0.4
 theta_shock= TIMESERIES(rep(0.4, 100), START  = c(1995,1), FREQ = 1)
 shock_theta_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
 
+## 1
+theta_shock1= TIMESERIES(rep(1, 100), START  = c(1995,1), FREQ = 1)
+shock_theta1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
+
+## 1.5
+theta_shock2= TIMESERIES(rep(0.4, 100), START  = c(1995,1), FREQ = 1)
+shock_theta2_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
 
 ### Shock rho
 
@@ -59,15 +67,6 @@ shock_rho1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
 
 
 ### Shock to r
-
-
-### Baseline
-r_shock= TIMESERIES(rep(0.01, 100), START  = c(1995,1), FREQ = 1)
-shock_r_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
-
-
-### 0.08
-
 r_shock1= TIMESERIES(rep(0.08, 100), START  = c(1995,1), FREQ = 1)
 shock_r1_model = TIMESERIES(rep(0, 100), START  = c(1995,1), FREQ = 1)
 
@@ -111,17 +110,10 @@ EQ> w = (1-alpha)*k^alpha*A
 
 IDENTITY> r
 EQ> r = alpha*k^(alpha-1)
-IF> shock_r_model <= 0
-IDENTITY> r
-EQ> r = r_shock
-IF> shock_r_model > 0
+IF> shock_r1_model <= 0
 IDENTITY> r
 EQ> r = r_shock1
 IF> shock_r1_model > 0
-
-COMMENT> Lavet for at kunne støde til r
-IDENTITY> shock_r_model
-EQ> shock_r_model = shock_r_model*1
 
 COMMENT> Lavet for at kunne støde til r
 IDENTITY> shock_r1_model
@@ -144,6 +136,12 @@ IF> shock_theta_model <= 0
 IDENTITY> theta
 EQ> theta = theta_shock
 IF> shock_theta_model > 0
+IDENTITY> theta
+EQ> theta = theta_shock1
+IF> shock_theta1_model > 0
+IDENTITY> theta
+EQ> theta = theta_shock2
+IF> shock_theta2_model > 0
 
 COMMENT> Lavet for at kunne støde til theta 
 IDENTITY> shock_theta_model
@@ -268,6 +266,7 @@ y_01 = Shock_1$simulation$y
 k_01 = Shock_1$simulation$k
 c1_01 = Shock_1$simulation$c1
 c2_01 = Shock_1$simulation$c2
+theta_01 = Shock_1$simulation$theta
 ```
 
 
@@ -426,64 +425,44 @@ grid()
 
 ## New baseline
 
+
 ```{r}
-shock_r_model_shock=shock_r_model %>% window(start= c(2050,1))
+S_modelData1$r=TIMESERIES(rep(0.01, 100), START  = c(1995,1), FREQ = 1)
 ```
 
 
+```{r}
+S_model_r=LOAD_MODEL_DATA(S_model,S_modelData1)
+```
 
 
 ```{r}
-# Define add-factor list (defining shock)
-constantAdjList3 <- list(
-  
- shock_r_model = TIMESERIES(shock_r_model_shock+1 ,START=c(2050,1),  FREQ=1)
- 
+exogenizeList <- list(
+  r = TRUE
 )
-
 ```
+
 
 
 ```{r}
 # Simulate the model (following shock)
-Shock_4 <- SIMULATE(S_model
+r_baseline <- SIMULATE(S_model_r
                     ,simType='DYNAMIC'
                     ,TSRANGE=c(1996,1,2090,1)
                     ,simConvergence=0.00001
                     ,simIterLimit=100
-                    ,ConstantAdjustment=constantAdjList3
+                    ,Exogenize = exogenizeList
                     )
 ```
 
 
 ```{r}
-y_04 = Shock_4$simulation$y
-k_04 = Shock_4$simulation$k
-c1_04 = Shock_4$simulation$c1
-c2_04 = Shock_4$simulation$c2
-s_04 = Shock_4$simulation$s
-```
-
-
-```{r}
-plot(s_04, col= "green"); lines(s_00, col = "blue"); 
-legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
-grid()
-
-
-plot(k_04, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
-legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
-grid()
-
-plot(c1_04, col= "green"); lines(c1_00, col = "blue"); 
-legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
-grid()
-
-
-plot(c2_04, col= "green"); lines(c2_00, col = "blue"); 
-legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
-grid()
-
+y_0r = r_baseline$simulation$y
+k_0r = r_baseline$simulation$k
+c1_0r = r_baseline$simulation$c1
+c2_0r = r_baseline$simulation$c2
+s_0r = r_baseline$simulation$s
+r_0r = r_baseline$simulation$r
 ```
 
 
@@ -508,13 +487,20 @@ constantAdjList4 <- list(
 
 
 ```{r}
+exogenizeList1 <- list(
+  r = c(1996,1,2050,1)
+)
+```
+
+```{r}
 # Simulate the model (following shock)
-Shock_5 <- SIMULATE(S_model
+Shock_5 <- SIMULATE(S_model_r
                     ,simType='DYNAMIC'
                     ,TSRANGE=c(1996,1,2090,1)
                     ,simConvergence=0.00001
                     ,simIterLimit=100
                     ,ConstantAdjustment=constantAdjList4
+                    ,Exogenize = exogenizeList1
                     )
 ```
 
@@ -525,28 +511,139 @@ k_05 = Shock_5$simulation$k
 c1_05 = Shock_5$simulation$c1
 c2_05 = Shock_5$simulation$c2
 s_05 = Shock_5$simulation$s
+r_05 = Shock_5$simulation$r
 ```
 
 
 ```{r}
-plot(s_05, col= "green"); lines(s_04, col = "blue"); 
+plot(s_05, col= "green"); lines(s_0r, col = "blue"); 
 legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
 grid()
 
 
-plot(k_04, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+plot(k_05, col= "green", ylim= c(0,7)); lines(k_0r, col = "blue"); 
 legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
 grid()
 
-plot(c1_04, col= "green"); lines(c1_00, col = "blue"); 
+plot(c1_05, col= "green"); lines(c1_0r, col = "blue"); 
 legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
 grid()
 
 
-plot(c2_04, col= "green"); lines(c2_00, col = "blue"); 
+plot(c2_05, col= "green"); lines(c2_0r, col = "blue"); 
 legend("top",legend=c("senario", "baseline"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
 grid()
 
 ```
 
 
+
+# Theta = 1
+
+
+```{r}
+S_modelData1$theta=TIMESERIES(rep(1, 100), START  = c(1995,1), FREQ = 1)
+```
+
+
+```{r}
+S_model_theta=LOAD_MODEL_DATA(S_model,S_modelData1)
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_theta1 <- SIMULATE(S_model_theta
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    )
+```
+
+
+```{r}
+y_0t = Shock_theta1$simulation$y
+k_0t = Shock_theta1$simulation$k
+c1_0t = Shock_theta1$simulation$c1
+c2_0t = Shock_theta1$simulation$c2
+theta_0t = Shock_theta1$simulation$theta
+```
+
+
+```{r}
+plot(y_0t, col= "green", ylim=c(0,2)); lines(y_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_0t, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_0t, col= "green"); lines(c2_01, col = "blue"); 
+legend("top",legend=c("c1", "c2"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_0t, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
+
+
+
+# Theta = 1
+
+
+```{r}
+S_modelData1$theta=TIMESERIES(rep(1.5, 100), START  = c(1995,1), FREQ = 1)
+```
+
+
+```{r}
+S_model_theta1=LOAD_MODEL_DATA(S_model,S_modelData1)
+```
+
+
+```{r}
+# Simulate the model (following shock)
+Shock_theta2 <- SIMULATE(S_model_theta1
+                    ,simType='DYNAMIC'
+                    ,TSRANGE=c(1996,1,2090,1)
+                    ,simConvergence=0.00001
+                    ,simIterLimit=100
+                    )
+```
+
+
+```{r}
+y_0tt = Shock_theta2$simulation$y
+k_0tt = Shock_theta2$simulation$k
+c1_0tt = Shock_theta2$simulation$c1
+c2_0tt = Shock_theta2$simulation$c2
+theta_0tt = Shock_theta2$simulation$theta
+```
+
+
+```{r}
+plot(y_0tt, col= "green", ylim=c(0,2)); lines(y_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_0tt, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+plot(c1_0tt, col= "green"); lines(c2_01, col = "blue"); 
+legend("top",legend=c("c1", "c2"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+
+plot(k_0tt, col= "green", ylim= c(0,7)); lines(k_00, col = "blue"); 
+legend("top",legend=c("Baseline", "Real data"),lty=c(1,1),lwd=c(2),bty="n", col = c("green", "blue"));
+grid()
+
+```
